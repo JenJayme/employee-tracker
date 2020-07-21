@@ -1,6 +1,7 @@
 const inquirer = require('inquirer');
 const fs = require('fs');
 const mysql = require("mysql");
+const { title } = require('process');
 
 //CREATE CONNECTION
 var connection = mysql.createConnection({
@@ -34,22 +35,22 @@ let chooseActionPrompt = {
 //FUNCTION TO RUN FIRST QUESTION
 function chooseActionFct() {
     inquirer.prompt(chooseActionPrompt).then(function (response) {
-        if (response === 'Employee') {
+        // if (response === 'Employee') {
             getEmployeeData()
-        } else if (response === 'Role') {
-            getRoleData()
-        } else getDeptData()
+        // } else if (response === 'Role') {
+            // getRoleData()
+        // } else getDeptData()
     })
 }
 
 function getEmployeeData() {
-    inquirer.prompt(employeeQuestions).then(function (answers) {
+    inquirer.prompt(employeeQuestions).then(function(answers) {
         employeeData = answers;
         employeeData.first_name = answers.first_name,
         employeeData.last_name = answers.last_name,
-        console.log(`Adding new employee ${first_name} ${last_name}`);
+        console.log(`Adding new employee ${employeeData.first_name} ${employeeData.last_name}`);
         allEmployeesArr.push(employeeData);
-        addEmployee(employeeData)
+        // addEmployee(employeeData)
     })
 }
 
@@ -81,11 +82,11 @@ var employeeQuestions = [
         {
             message: 'Employee First Name:',
             type: 'input',
-            name: 'first-name'
+            name: 'first_name'
         }, {
             message: 'Last name:',
             type: 'input',
-            name: 'last-name'
+            name: 'last_name'
         }
     ]
 
@@ -102,7 +103,7 @@ var employeeQuestions = [
     var deptQuestion = {
         message: 'Department Name:',
         type: 'input',
-        name: 'dept-name'
+        name: 'department_name'
     }
 
     function getDeptData() {
@@ -114,7 +115,7 @@ var employeeQuestions = [
             addDepartment(deptData)
         })
     }
-    
+
     function addDepartment(deptData) {
         console.log("Adding a new department...\n");
         var query = connection.query(
@@ -130,4 +131,29 @@ var employeeQuestions = [
         console.log(query.sql);
     }
 
-    
+    function getRoleData() {
+        inquirer.prompt(deptQuestion).then(function (answers) {
+            roleData = answers;
+            roleData.title = answers.title,
+            roleData.salary = answers.salary,
+            console.log(`Adding new role ${title}`);
+            allRolesArr.push(roleData);
+            addRole(roleData)
+        })
+    }
+
+    function addRole(roleData) {
+        console.log("Adding a new role...\n");
+        var query = connection.query(
+            "INSERT INTO roles SET ?",
+            {
+                title: roleData.title,
+                salary: roleData.salary
+            },
+            function (err, res) {
+                console.log(res.affectedRows + " department added to MySql!\n");
+            }
+        );
+        // logs the query being run
+        console.log(query.sql);
+    }
