@@ -17,7 +17,6 @@ var connection = mysql.createConnection({
     database: "ice_creamDB"
 });
 
-
 connection.connect(function (err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId + "\n");
@@ -105,3 +104,30 @@ var employeeQuestions = [
         type: 'input',
         name: 'dept-name'
     }
+
+    function getDeptData() {
+        inquirer.prompt(deptQuestion).then(function (response) {
+            deptData = response;
+            deptData.department_name = answers.department_name,
+            console.log(`Adding new department ${department_name}`);
+            allDeptsArr.push(deptData);
+            addDepartment(deptData)
+        })
+    }
+    
+    function addDepartment(deptData) {
+        console.log("Adding a new department...\n");
+        var query = connection.query(
+            "INSERT INTO departments SET ?",
+            {
+                department_name: deptData.department_name,
+            },
+            function (err, res) {
+                console.log(res.affectedRows + " department added to MySql!\n");
+            }
+        );
+        // logs the query being run
+        console.log(query.sql);
+    }
+
+    
