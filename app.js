@@ -24,30 +24,6 @@ connection.connect(function (err) {
     chooseActionFct();
 });
 
-function addEmployee() {
-    console.log("Adding a new employee...\n");
-    var query = connection.query(
-        "INSERT INTO employees SET ?",
-        {
-            first_name: "Michael",
-            last_name: "Scott",
-        },
-        function (err, res) {
-            console.log(res.affectedRows + " employee added!\n");
-        }
-    );
-    // logs the query being run
-    console.log(query.sql);
-}
-
-//OBJECTS & ARRAYS TO HOLD DATA FOR EACH ITEM
-var employeeData = {};
-var allEmployeesArr = [];
-var roleData = {};
-var allRolesArr = [];
-var deptData = {};
-var allDeptsArr = [];
-
 //FIRST QUESTION TO DETERMINE WHAT USER WOULD LIKE TO DO (POST or BID)
 let chooseActionPrompt = {
     message: 'Which type of record would you like to add?',
@@ -71,8 +47,36 @@ function getEmployeeData() {
     inquirer.prompt(employeeQuestions).then(function (answers) {
         employeeData = answers;
         employeeData.first_name = answers.first_name,
-        employeeData.last_name = answers.last_name
-    }
+        employeeData.last_name = answers.last_name,
+        console.log(`Adding new employee ${first_name} ${last_name}`);
+        allEmployeesArr.push(employeeData);
+        addEmployee(employeeData)
+    })
+}
+
+function addEmployee(employeeData) {
+    console.log("Adding a new employee...\n");
+    var query = connection.query(
+        "INSERT INTO employees SET ?",
+        {
+            first_name: employeeData.first_name,
+            last_name: employeeData.last_name,
+        },
+        function (err, res) {
+            console.log(res.affectedRows + " employee added to MySql!\n");
+        }
+    );
+    // logs the query being run
+    console.log(query.sql);
+}
+
+//OBJECTS & ARRAYS TO HOLD DATA FOR EACH ITEM
+var employeeData = {};
+var allEmployeesArr = [];
+var roleData = {};
+var allRolesArr = [];
+var deptData = {};
+var allDeptsArr = [];
 
 var employeeQuestions = [
         {
