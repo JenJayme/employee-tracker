@@ -27,39 +27,44 @@ connection.connect(function (err) {
 
 //FIRST QUESTION TO DETERMINE WHAT USER WOULD LIKE TO DO
 var chooseActionPrompt = {
-    message: 'What would you like to enter?',
+    message: 'What would you like to do?',
     type: 'list',
     name: 'action',
-    choices: ['Department', 'Role', 'Employee']
+    choices: [
+        'Enter Department', 
+        'Enter Role', 
+        'Enter Employee',
+        'Print All']
 }
 
 // FUNCTION TO RUN FIRST QUESTION
 function chooseActionFct() {
-    inquirer.prompt(chooseActionPrompt)
-        .then(function (response) {
-            if (response.action === 'Employee') {
-                getEmployeeData()
-            } else if (response.action === 'Role') {
-                getRoleData()
-            } else getDeptData()
-        })
+    inquirer.prompt(chooseActionPrompt).then(function (response) {
+            if (response.action === 'Enter Employee') {
+                getEmployeeData();
+            } else if (response.action === 'Enter Role') {
+                getRoleData();
+            } else if (response.action === 'Enter Department') {
+                getDeptData();
+            } else printData();
+    });
 }
 
 //QUESTION OBJECT TO DETERMINE WHETHER TO ROUTE USER BACK TO ENTER MORE DATA OR FINISH AND PRINT
-var continuePrompt = {
+var addMorePrompt = {
     message: 'Do you have anything more to enter?',
     type: 'confirm',
     name: 'add_more',
 }
 
 //FUNCTION TO CONTINUE / RERUN QUESTIONS
-function continue() {
-    inquirer.prompt(continuePrompt)
+function addMore() {
+    inquirer.prompt(addMorePrompt)
         .then(function (response) {
-            if (response.add_more === 'Yes') {
-                chooseActionFct()
+            if (response.add_more === true) {
+                chooseActionFct();
             } else {
-                printData()
+                printData();
             }
         })
 }
@@ -69,12 +74,12 @@ function getEmployeeData() {
     inquirer.prompt(employeeQuestions)
         .then(function (answers) {
             console.log(`Adding new employee ${answers.first_name} ${answers.last_name}`);
-            addEmployee(answers)
+            addEmployee(answers);
         })
 }
 
 //FUNCTION TO ADD USER RESPONSES TO DB
-function addEmployee(employeeData) {
+function addEmployee(answers) {
     console.log("Adding a new employee...\n");
         var query = connection.query(
             "INSERT INTO employees SET ?",
@@ -84,11 +89,12 @@ function addEmployee(employeeData) {
                 },
             function (err, res) {
             console.log(res.affectedRows + " employee added to MySql!\n");
+            addMore();
             }
         );
             // logs the query being run
             console.log(query.sql);
-        }
+}
 
 //ARRAY OF QUESTIONS TO ASK ABOUT EACH EMPLOYEE
 var employeeQuestions = [
@@ -101,7 +107,7 @@ var employeeQuestions = [
             type: 'input',
             name: 'last_name'
         }
-]
+];
 
 //ARRAY OF QUESTIONS TO ASK ABOUT EACH ROLE
 var roleQuestions = [
@@ -114,22 +120,22 @@ var roleQuestions = [
             type: 'input',
             name: 'salary'
         }
-]
+];
 
 //OBJECT - QUESTION TO ASK ABOUT EACH DEPARTMENT
 var deptQuestion = {
         message: 'Department Name:',
         type: 'input',
         name: 'department_name'
-}
+};
 
 function getDeptData() {
         inquirer.prompt(deptQuestion)
             .then(function (response) {
                 console.log(`Adding new department ${response.department_name}`);
-                addDepartment(response)
+                addDepartment(response);
             })
-        }
+}
 
 function addDepartment(response) {
         var query = connection.query(
@@ -139,21 +145,22 @@ function addDepartment(response) {
             },
                 function (err, res) {
                 console.log(res.affectedRows + " department added to MySql!\n");
+                addMore();
             }
         );
             // logs the query being run
             console.log(query.sql);
 }
 
-    function getRoleData() {
-        inquirer.prompt(deptQuestion)
+function getRoleData() {
+        inquirer.prompt(roleQuestions)
             .then(function (response) {
                 console.log(`Adding new role ${response.title}`);
                 addRole(response)
-        })
-    }
+    })
+}
 
-    function addRole(response) {
+function addRole(response) {
         var query = connection.query(
             "INSERT INTO roles SET ?",
                 {
@@ -161,12 +168,13 @@ function addDepartment(response) {
                     salary: response.salary
                 },
                 function (err, res) {
-                    console.log(res.affectedRows + " department added to MySql!\n")
+                    console.log(`${response.title} role added to MySql!\n`);
+                    addMore()
                 }
             );
             // logs the query being run
             console.log(query.sql);
-        }
+}
 
     function printData() {
         connection.query('SELECT * FROM employees', function (err, res) {
