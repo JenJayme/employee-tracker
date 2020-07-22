@@ -46,3 +46,23 @@ function addManager() {
         }
     }
 }
+
+
+var managerQuestions = [
+    {
+        message: 'For which employee would you like to add a manager?',
+        type: 'rawlist',
+        name: 'employee'
+        choices: 
+        choices: function() {
+            var choiceArray = [];
+            for (var i = 0; i < results.length; i++) {
+              choiceArray.push(results[i].item_name);
+            }
+            return choiceArray;
+    }, {
+        message: 'Salary:',
+        type: 'input',
+        name: 'salary'
+    }
+];

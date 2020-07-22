@@ -35,7 +35,7 @@ var chooseActionPrompt = {
         'Enter Role', 
         'Enter Employee',
         'Add Manager',
-        'Print All']
+        'View Employees']
 }
 
 // FUNCTION TO RUN FIRST QUESTION
@@ -68,6 +68,10 @@ function chooseActionFct() {
 
             case 'Add Manager':
                 addManager();
+                break;
+
+            case 'View Lists':
+                printMenu();
                 break;
 
             default: 
@@ -204,61 +208,97 @@ function addRole(response) {
             console.log(query.sql);
 }
 
-function printData() {
-    connection.query('SELECT * FROM employees', function (err, res) {
+function printData(table) {
+    connection.query('SELECT * FROM table', function (err, results) {
         if (err) throw err;
-        console.table(res);
+        console.table(results);
         connection.end();
         });
 }
 
+
+
+// =============================================
+
+//ADD MANAGER FUNCTION - first set up prompt to provide a list of all employees to choose from. Set this choice as person A.
+
+// set up a second prompt to show a list of all employees to choose from.  Set this choice as person B.
+
+// set up a switch function to determine whether to Add Manager or Add Direct Report. This will determine where the ids get returned.  
+//If Add Manager, person B's ID gets added to person A's record. If Add Direct Report, person A's ID gets added to person B's record. 
+
+//Console log results and create a confirm prompt to continue with the action.
+
+//Refer to update function from icecreamcrud
 function addManager() {
-    connection.query("SELECT * FROM employees", function(err, results) {
-    inquirer.prompt(
-        message: 'For which employee would you like to add a manager?',
-        type: 'rawlist',
-        name: 'employee'
-        choices: 
-        choices: function() {
-            var choiceArray = [];
-            for (var i = 0; i < results.length; i++) {
-                var fullName = results[i].last_name + ', ' + results[i].first_name;
-                choiceArray.push(results[i].fullName);
-            }
-            return choiceArray;
-        })
-        .then(function(response)
+    
 }
-// =============================================
 
-.then(function(answer) {
-    // get the information of the chosen item
-    var chosenItem;
-    for (var i = 0; i < results.length; i++) {
-      if (results[i].item_name === answer.choice) {
-        chosenItem = results[i];
+//create a list of employees from which to choose
+function selectEmployee () {
+    var results = readTables();
+}
+
+
+//PRINT MENU AND PRINT DATA FUNCTIONS
+
+//Print Menu - Prompt user to select which table to view - employees, roles, departments, or all. Use switch-case.
+
+//Upon selection, pass that table through printData function.
+
+//After printing, return to initial what would you like to do prompt.
+
+function printMenu() {
+
+
+}
+
+//==============================================================
+
+//USE FOR CREATING A LIST OF EMPLOYEES TO CHOOSE FROM
+
+function bidPrompt(){
+    var res = readItems();
+    var choices = []
+    for(var i = 0; i < res.length; i++){
+        choice = res[i].item_name
+        choices.push(choice)
+    }
+    inquirer.prompt([
+        {
+            type: "rawlist",
+            name: "choice",
+            message: "nsdf",
+            choices: choices
+        }
+    ])
+};
+function readItems() {
+
+connection.query("SELECT * FROM items", function(err, res) {
+    if (err) throw err;
+    return res;
+})
+}
+
+//=======================================================
+
+//USE FOR UPDATING EMPLOYEE RECORD WITH MANAGER ID
+function updateProduct() {
+    console.log("Updating all Rocky Road quantities...\n");
+    var query = connection.query(
+      "UPDATE products SET ? WHERE ?",
+      [
+        {
+          quantity: 100
+        },
+        {
+          flavor: "Rocky Road"
+        }
+      ],
+      function(err, res) {
+        console.log(res.affectedRows + " products updated!\n");
+        // Call deleteProduct AFTER the UPDATE completes
+        deleteProduct();
       }
-    }
-
-// =============================================
-
-
-
-var managerQuestions = [
-    {
-        message: 'For which employee would you like to add a manager?',
-        type: 'rawlist',
-        name: 'employee'
-        choices: 
-        choices: function() {
-            var choiceArray = [];
-            for (var i = 0; i < results.length; i++) {
-              choiceArray.push(results[i].item_name);
-            }
-            return choiceArray;
-    }, {
-        message: 'Salary:',
-        type: 'input',
-        name: 'salary'
-    }
-];
+    );
