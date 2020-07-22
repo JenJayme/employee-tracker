@@ -1,7 +1,7 @@
 const inquirer = require('inquirer');
 const fs = require('fs');
 const mysql = require("mysql");
-const { title } = require('process');
+const { title, listenerCount } = require('process');
 const { response } = require('express');
 
 //CREATE CONNECTION
@@ -16,7 +16,7 @@ var connection = mysql.createConnection({
 
     // Your password
     password: "password",
-    database: "TheOfficeDB"
+    database: "dunder_mifflin_DB"
 });
 
 connection.connect(function (err) {
@@ -28,14 +28,14 @@ connection.connect(function (err) {
 //FIRST QUESTION TO DETERMINE WHAT USER WOULD LIKE TO DO
 var chooseActionPrompt = {
     message: 'What would you like to do?',
-    type: 'list',
+    type: 'rawlist',
     name: 'action',
     choices: [
         'Enter Department', 
         'Enter Role', 
         'Enter Employee',
         'Add Manager',
-        'View Employees']
+        'View Lists']
 }
 
 // FUNCTION TO RUN FIRST QUESTION
@@ -70,12 +70,7 @@ function chooseActionFct() {
                 addManager();
                 break;
 
-            case 'View Lists':
-                printMenu();
-                break;
-
-            default: 
-                printData();
+            default: printMenu();
         }
     });
 }
@@ -84,7 +79,7 @@ function chooseActionFct() {
 
 //QUESTION OBJECT TO DETERMINE WHETHER TO ROUTE USER BACK TO ENTER MORE DATA OR FINISH AND PRINT
 var addMorePrompt = {
-    message: 'Do you have anything more to enter?',
+    message: 'Would you like to view or enter anything else?',
     type: 'confirm',
     name: 'add_more',
 }
@@ -96,7 +91,7 @@ function addMore() {
             if (response.add_more === true) {
                 chooseActionFct();
             } else {
-                printData();
+                connection.end();
             }
         })
 }
@@ -208,15 +203,32 @@ function addRole(response) {
             console.log(query.sql);
 }
 
-function printData(table) {
-    connection.query('SELECT * FROM table', function (err, results) {
+function printEmployees() {
+    connection.query('SELECT * FROM employees',
+    function (err, results) {
         if (err) throw err;
         console.table(results);
-        connection.end();
-        });
-}
+        addMore();
+    })
+};
 
+function printRoles() {
+    connection.query('SELECT * FROM roles',
+    function (err, results) {
+        if (err) throw err;
+        console.table(results);
+        addMore();
+    })
+};
 
+function printDepartments() {
+    connection.query('SELECT * FROM departments',
+    function (err, results) {
+        if (err) throw err;
+        console.table(results);
+        addMore();
+    })
+};
 
 // =============================================
 
@@ -224,81 +236,137 @@ function printData(table) {
 
 // set up a second prompt to show a list of all employees to choose from.  Set this choice as person B.
 
-// set up a switch function to determine whether to Add Manager or Add Direct Report. This will determine where the ids get returned.  
-//If Add Manager, person B's ID gets added to person A's record. If Add Direct Report, person A's ID gets added to person B's record. 
+// set up a switch function to determine whether to Add Manager or Add Direct Report. This will determine where the ids get returned.
+//If Add Manager, person B's ID gets added to person A's record. If Add Direct Report, person A's ID gets added to person B's record.
 
 //Console log results and create a confirm prompt to continue with the action.
 
 //Refer to update function from icecreamcrud
-function addManager() {
-    
-}
+// function addManager() {
+
+// }
 
 //create a list of employees from which to choose
-function selectEmployee () {
-    var results = readTables();
-}
+// function selectEmployee () {
+//     var results = readTables();
+// }
 
 
 //PRINT MENU AND PRINT DATA FUNCTIONS
 
 //Print Menu - Prompt user to select which table to view - employees, roles, departments, or all. Use switch-case.
-
-//Upon selection, pass that table through printData function.
-
 //After printing, return to initial what would you like to do prompt.
 
-function printMenu() {
+async function printMenu() {
+    const {listChoice} = await inquirer.prompt({
+        message: 'Which list would you like to view?',
+        type: 'list',
+        name: 'listChoice',
+        choices: [
+            'Employees',
+            'Departments',
+            'Roles',
+            // 'Managers',
+        ]});
+
+        switch(response.listChoice) {
+        case 'Employees':
+            printEmployees();
+            break;
+
+        case 'Departments':
+            printDepartments();
+            break;
+
+        case 'Roles':
+            printRoles();
+            break;
+
+        default: printEmployees();
+
+        }
+
+        console.log('Print Menu is running a function...');
+            connection.end();
+};
 
 
+// =================================================
+
+function readTables(table) {
+    connection.query("SELECT * FROM table", function(err, results) {
+        if (err) throw err;
+        cb(results);
+    })
+}
+
+//if Managers is selected from the print menu, print a table with an array of objects with key value pairs Supervisor, Direct Reports
+function readManagerRelations () {
+    var allManagersArr = [];
+    connection.query("SELECT * FROM employees WHERE manager_id IS NOT NULL",
+        function(err, results) {
+        if (err) throw err;
+        allManagersArr = results;
+        console.log(allManagersArr);
+        return allManagersArr;
+        })
+}
+
+
+//if All is selected, print data in all tables
+var all = function printOverview () {
+    connection.query("SELECT * FROM employees GROUP BY departments", function(err, results) {
+        console.table(results);
+    });
 }
 
 //==============================================================
 
 //USE FOR CREATING A LIST OF EMPLOYEES TO CHOOSE FROM
 
-function bidPrompt(){
-    var res = readItems();
-    var choices = []
-    for(var i = 0; i < res.length; i++){
-        choice = res[i].item_name
-        choices.push(choice)
-    }
-    inquirer.prompt([
-        {
-            type: "rawlist",
-            name: "choice",
-            message: "nsdf",
-            choices: choices
-        }
-    ])
-};
-function readItems() {
+// function bidPrompt(){
+//     var res = readItems();
+//     var choices = []
+//     for(var i = 0; i < res.length; i++){
+//         choice = res[i].item_name
+//         choices.push(choice)
+//     }
+//     inquirer.prompt([
+//         {
+//             type: "rawlist",
+//             name: "choice",
+//             message: "nsdf",
+//             choices: choices
+//         }
+//     ])
+// };
 
-connection.query("SELECT * FROM items", function(err, res) {
-    if (err) throw err;
-    return res;
-})
-}
+// function readItems() {
+
+// connection.query("SELECT * FROM items", function(err, res) {
+//     if (err) throw err;
+//     return res;
+// })
+// }
 
 //=======================================================
 
 //USE FOR UPDATING EMPLOYEE RECORD WITH MANAGER ID
-function updateProduct() {
-    console.log("Updating all Rocky Road quantities...\n");
-    var query = connection.query(
-      "UPDATE products SET ? WHERE ?",
-      [
-        {
-          quantity: 100
-        },
-        {
-          flavor: "Rocky Road"
-        }
-      ],
-      function(err, res) {
-        console.log(res.affectedRows + " products updated!\n");
-        // Call deleteProduct AFTER the UPDATE completes
-        deleteProduct();
-      }
-    );
+// function updateProduct() {
+//     console.log("Updating all Rocky Road quantities...\n");
+//     var query = connection.query(
+//       "UPDATE products SET ? WHERE ?",
+//       [
+//         {
+//           quantity: 100
+//         },
+//         {
+//           flavor: "Rocky Road"
+//         }
+//       ],
+//       function(err, res) {
+//         console.log(res.affectedRows + " products updated!\n");
+//         // Call deleteProduct AFTER the UPDATE completes
+//         deleteProduct();
+//       }
+//     ))

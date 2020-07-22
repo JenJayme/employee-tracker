@@ -66,3 +66,26 @@ var managerQuestions = [
         name: 'salary'
     }
 ];
+
+
+.then(chooseActionFct())
+
+
+function printMenu() {
+    inquirer.prompt([
+        {
+            message: 'Which list would you like to view?',
+            type: 'list',
+            name: 'view-choice',
+            choices: [
+                'Employees',
+                'Departments',
+                'Roles',
+                // 'Managers',
+            ]
+        }])
+        .then(function(response) {
+            printTable();
+            // console.table(results);
+        });
+}

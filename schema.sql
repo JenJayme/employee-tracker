@@ -1,8 +1,8 @@
-DROP DATABASE IF EXISTS TheOfficeDB;
+DROP DATABASE IF EXISTS dunder_mifflin_DB;
 
-CREATE DATABASE TheOfficeDB;
+CREATE DATABASE dunder_mifflin_DB;
 
-USE TheOfficeDB;
+USE dunder_mifflin_DB;
 
 CREATE TABLE departments (
     department_id INTEGER NOT NULL AUTO_INCREMENT,
@@ -25,9 +25,11 @@ CREATE TABLE employees (
     last_name VARCHAR(30),
     role_id INTEGER,
     manager_id INTEGER,
+    department_id INTEGER,
     PRIMARY KEY (emp_id),
     FOREIGN KEY (role_id) REFERENCES roles(role_id),
-    FOREIGN KEY (manager_id) REFERENCES employees(emp_id)
+    FOREIGN KEY (manager_id) REFERENCES employees(emp_id),
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
 );
 
 SELECT * FROM employees;
