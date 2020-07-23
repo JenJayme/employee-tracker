@@ -24,6 +24,8 @@ CREATE TABLE employees (
     first_name VARCHAR(30),
     last_name VARCHAR(30),
     department_name VARCHAR(50),
+    emp_title VARCHAR(60),
+    manager_name VARCHAR(60),
     role_id INTEGER,
     manager_id INTEGER,
     department_id INTEGER,
