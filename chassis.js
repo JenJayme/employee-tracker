@@ -128,6 +128,8 @@ function addEmployee(answers) {
 };
 
 //ARRAY OF QUESTIONS TO ASK ABOUT EACH EMPLOYEE
+var departments = [];
+
 var employeeQuestions = [
         {
             message: 'Employee First Name:',
@@ -148,14 +150,19 @@ var employeeQuestions = [
 // ======================================================================
 // ATTEMPT TO RECONSTRUCT GET EMPLOYEE DATA
 
-function getEmployeeData2(){
-    var res = readDeptTable();
-    var choices = []
-    for(var i = 0; i < res.length; i++){
-        choice = res[i].item_name
-        choices.push(choice)
-    }
-    inquirer.prompt([
+async function getEmployeeData2() {
+    connection.query("SELECT * FROM departments",
+    function(err, results) {
+        if (err) throw err;
+        var departments = [];
+        for (var i = 0; i < results.length; i++) {
+        departments.push(results[i].department_name)}
+        if (departments === []) {
+            console.log('No departments entered yet.')
+        } else console.log(departments);
+        return departments;
+    }),
+    await inquirer.prompt([
         {
             message: 'Employee First Name:',
             type: 'input',
@@ -166,17 +173,16 @@ function getEmployeeData2(){
             name: 'last_name'
         }, {
             type: "rawlist",
-            name: "department",
+            name: "department_name",
             message: "Employee Department",
-            choices: choices
+            choices: departments
         }
     ])
     .then(function (answers) {
         console.log(`Adding new employee ${answers.first_name} ${answers.last_name}`);
         addEmployee(answers);
-    })
-};
-
+    });
+}
 // function readItems() {
 
 // connection.query("SELECT * FROM items", function(err, res) {
@@ -400,35 +406,6 @@ async function quit() {
         process.exit();
 }
 
-//==============================================================
-
-//USE FOR CREATING A LIST OF EMPLOYEES TO CHOOSE FROM
-
-// function bidPrompt(){
-//     var res = readItems();
-//     var choices = []
-//     for(var i = 0; i < res.length; i++){
-//         choice = res[i].item_name
-//         choices.push(choice)
-//     }
-//     inquirer.prompt([
-//         {
-//             type: "rawlist",
-//             name: "choice",
-//             message: "nsdf",
-//             choices: choices
-//         }
-//     ])
-// };
-
-// function readItems() {
-
-// connection.query("SELECT * FROM items", function(err, res) {
-//     if (err) throw err;
-//     return res;
-// })
-// }
-
 //=======================================================
 
 //USE FOR UPDATING EMPLOYEE RECORD WITH MANAGER ID
@@ -449,4 +426,3 @@ async function quit() {
 //         // Call deleteProduct AFTER the UPDATE completes
 //         deleteProduct();
 //       }
-//     ))
