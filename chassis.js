@@ -40,8 +40,8 @@ var chooseActionPrompt = {
 }
 
 // FUNCTION TO RUN FIRST QUESTION
-function chooseActionFct() {
-    inquirer.prompt(chooseActionPrompt).then(function (response) {
+async function chooseActionFct() {
+    await inquirer.prompt(chooseActionPrompt).then(function (response) {
         switch(response.action){
             case 'Enter Employee': 
                 getEmployeeData2(); //need to add department & role
@@ -89,13 +89,29 @@ function addMore() {
         })
 }
 
-function getDeptList (results) {
-    connection.query("SELECT * FROM departments", function(err, results) {
-        if (err) throw err;
-    var departments = [];
-    departments.push(results);
-        return(departments);
-})
+function getDeptList () {
+    connection.query("SELECT * FROM departments",
+    function(err, results) {
+    if (err) throw err;
+
+        var departmentsArr = [];
+        for (var i = 0; i < results.length; i++) {
+        departmentsArr.push(results[i].department_name);}
+        console.log(departmentsArr);
+        return departmentsArr;
+    })
+}
+
+var deptFallbackArray = [
+    'Scranton Branch',
+    'Head Office',
+    'Accounting',
+    'Human Resources',
+    'Sales',
+    'Customer Service',
+    'Warehouse'
+];
+
 
 //FUNCTION TO PROMPT USER FOR INFO. CALLS SEPARATE FUNCTION TO ADDANSWERS TO DB
 function getEmployeeData() {
@@ -104,7 +120,6 @@ function getEmployeeData() {
             console.log(`Adding new employee ${answers.first_name} ${answers.last_name}`);
             addEmployee(answers);
         })
-    }
 }
 
 //FUNCTION TO ADD USER RESPONSES TO DB
@@ -115,7 +130,7 @@ function addEmployee(answers) {
                 {
                     first_name: answers.first_name,
                     last_name: answers.last_name,
-                    department_id: answers.department,
+                    department_name: answers.department_name,
                 },
             function (err, res) {
                 if (err) throw err;
@@ -128,8 +143,6 @@ function addEmployee(answers) {
 };
 
 //ARRAY OF QUESTIONS TO ASK ABOUT EACH EMPLOYEE
-var departments = [];
-
 var employeeQuestions = [
         {
             message: 'Employee First Name:',
@@ -150,7 +163,7 @@ var employeeQuestions = [
 // ======================================================================
 // ATTEMPT TO RECONSTRUCT GET EMPLOYEE DATA
 
-async function getEmployeeData2() {
+function getEmployeeData2() {
     connection.query("SELECT * FROM departments",
     function(err, results) {
         if (err) throw err;
@@ -162,7 +175,7 @@ async function getEmployeeData2() {
         } else console.log(departments);
         return departments;
     }),
-    await inquirer.prompt([
+    inquirer.prompt([
         {
             message: 'Employee First Name:',
             type: 'input',
@@ -172,10 +185,10 @@ async function getEmployeeData2() {
             type: 'input',
             name: 'last_name'
         }, {
-            type: "rawlist",
+            type: "list",
             name: "department_name",
             message: "Employee Department",
-            choices: departments
+            choices: deptFallbackArray
         }
     ])
     .then(function (answers) {
@@ -305,7 +318,50 @@ function printDepartments() {
     })
 };
 
-// =============================================
+//====================================================================================
+//UPDATE EMPLOYEE FUNCTION
+function updateEmployee (employee) {
+    var query = connection.query(
+        UPDATE employees SET ? WHERE ?",
+        [ 
+            {
+                department_name: response.department_name
+            }, {
+                last_name: response.last_name,
+                first_name: response.first_name
+
+            }
+        ]
+    )
+}
+
+
+//USE FOR UPDATING EMPLOYEE RECORD WITH MANAGER ID
+// function updateProduct() {
+//     console.log("Updating all Rocky Road quantities...\n");
+//     var query = connection.query(
+//       "UPDATE products SET ? WHERE ?",
+//       [
+//         {
+//           quantity: 100
+//         },
+//         {
+//           flavor: "Rocky Road"
+//         }
+//       ],
+//       function(err, res) {
+//         console.log(res.affectedRows + " products updated!\n");
+//         // Call deleteProduct AFTER the UPDATE completes
+//         deleteProduct();
+//       }
+
+
+
+
+
+
+
+//====================================================================================
 
 //ADD MANAGER FUNCTION - first set up prompt to provide a list of all employees to choose from. Set this choice as person A.
 
@@ -343,7 +399,10 @@ async function printMenu() {
             'Departments',
             'Roles',
             // 'Managers',
-        ]});
+        ]
+    })
+    .then(function (response) {
+        console.log(response);
 
         switch(response.listChoice) {
         case 'Employees':
@@ -358,12 +417,12 @@ async function printMenu() {
             printRoles();
             break;
 
-        default: printEmployees();
-
+        default: printDepartments();
         }
+        console.log(`Here's the latest list of ${response.listChoice}!`);
+    });
 
-        console.log('Print Menu is running a function...');
-};
+}
 
 // =================================================
 
@@ -408,21 +467,3 @@ async function quit() {
 
 //=======================================================
 
-//USE FOR UPDATING EMPLOYEE RECORD WITH MANAGER ID
-// function updateProduct() {
-//     console.log("Updating all Rocky Road quantities...\n");
-//     var query = connection.query(
-//       "UPDATE products SET ? WHERE ?",
-//       [
-//         {
-//           quantity: 100
-//         },
-//         {
-//           flavor: "Rocky Road"
-//         }
-//       ],
-//       function(err, res) {
-//         console.log(res.affectedRows + " products updated!\n");
-//         // Call deleteProduct AFTER the UPDATE completes
-//         deleteProduct();
-//       }
