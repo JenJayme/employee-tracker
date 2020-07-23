@@ -1,8 +1,8 @@
-DROP DATABASE IF EXISTS dunder_mifflin_DB;
+DROP DATABASE IF EXISTS NewDunderMifflinDB;
 
-CREATE DATABASE dunder_mifflin_DB;
+CREATE DATABASE NewDunderMifflinDB;
 
-USE dunder_mifflin_DB;
+USE NewDunderMifflinDB;
 
 CREATE TABLE departments (
     department_id INTEGER NOT NULL AUTO_INCREMENT,
@@ -12,8 +12,8 @@ CREATE TABLE departments (
 
 CREATE TABLE roles (
     role_id INTEGER NOT NULL AUTO_INCREMENT,    
-    title VARCHAR(30),
-    salary DECIMAL(6,2),
+    title VARCHAR(60),
+    salary DECIMAL(6,0),
     department_id INTEGER,
     PRIMARY KEY (role_id),
     FOREIGN KEY (department_id) REFERENCES departments(department_id)
@@ -23,6 +23,7 @@ CREATE TABLE employees (
     emp_id INTEGER NOT NULL AUTO_INCREMENT,
     first_name VARCHAR(30),
     last_name VARCHAR(30),
+    department_name VARCHAR(50),
     role_id INTEGER,
     manager_id INTEGER,
     department_id INTEGER,

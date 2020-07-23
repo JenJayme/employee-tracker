@@ -16,7 +16,7 @@ var connection = mysql.createConnection({
 
     // Your password
     password: "password",
-    database: "dunder_mifflin_DB"
+    database: "NewDunderMifflinDB"
 });
 
 connection.connect(function (err) {
@@ -34,28 +34,17 @@ var chooseActionPrompt = {
         'Enter Department', 
         'Enter Role', 
         'Enter Employee',
-        'Add Manager',
-        'View Lists']
+        'Add Manager', //function not yet built
+        'View Lists',
+        'Quit']
 }
 
 // FUNCTION TO RUN FIRST QUESTION
-// function chooseActionFct() {
-//     inquirer.prompt(chooseActionPrompt).then(function (response) {
-//             if (response.action === 'Enter Employee') {
-//                 getEmployeeData();
-//             } else if (response.action === 'Enter Role') {
-//                 getRoleData();
-//             } else if (response.action === 'Enter Department') {
-//                 getDeptData();
-//             } else printData();
-//     });
-// }
-
 function chooseActionFct() {
     inquirer.prompt(chooseActionPrompt).then(function (response) {
         switch(response.action){
             case 'Enter Employee': 
-                getEmployeeData();
+                getEmployeeData2(); //need to add department & role
                 break;
 
             case 'Enter Role':
@@ -67,7 +56,11 @@ function chooseActionFct() {
                 break;
 
             case 'Add Manager':
-                addManager();
+                addManager(); //need to write function
+                break;
+
+            case 'Quit':
+                quit(); //need to write function
                 break;
 
             default: printMenu();
@@ -96,6 +89,14 @@ function addMore() {
         })
 }
 
+function getDeptList (results) {
+    connection.query("SELECT * FROM departments", function(err, results) {
+        if (err) throw err;
+    var departments = [];
+    departments.push(results);
+        return(departments);
+})
+
 //FUNCTION TO PROMPT USER FOR INFO. CALLS SEPARATE FUNCTION TO ADDANSWERS TO DB
 function getEmployeeData() {
     inquirer.prompt(employeeQuestions)
@@ -103,6 +104,7 @@ function getEmployeeData() {
             console.log(`Adding new employee ${answers.first_name} ${answers.last_name}`);
             addEmployee(answers);
         })
+    }
 }
 
 //FUNCTION TO ADD USER RESPONSES TO DB
@@ -113,15 +115,17 @@ function addEmployee(answers) {
                 {
                     first_name: answers.first_name,
                     last_name: answers.last_name,
+                    department_id: answers.department,
                 },
             function (err, res) {
-            console.log(res.affectedRows + " employee added to MySql!\n");
-            addMore();
-            }
+                if (err) throw err;
+                console.log(answers.first_name + " " + answers.last_name + " employee added to Dunder Mifflin employees database!\n");
+                addMore();
+                }
         );
             // logs the query being run
             console.log(query.sql);
-}
+};
 
 //ARRAY OF QUESTIONS TO ASK ABOUT EACH EMPLOYEE
 var employeeQuestions = [
@@ -133,8 +137,73 @@ var employeeQuestions = [
             message: 'Last name:',
             type: 'input',
             name: 'last_name'
+        }, {
+            message: 'Department: ',
+            type: 'rawlist',
+            name: 'department',
+            choices: ['choice 1', 'choice 2', 'choice 3']
         }
 ];
+
+// ======================================================================
+// ATTEMPT TO RECONSTRUCT GET EMPLOYEE DATA
+
+function getEmployeeData2(){
+    var res = readDeptTable();
+    var choices = []
+    for(var i = 0; i < res.length; i++){
+        choice = res[i].item_name
+        choices.push(choice)
+    }
+    inquirer.prompt([
+        {
+            message: 'Employee First Name:',
+            type: 'input',
+            name: 'first_name'
+        }, {
+            message: 'Last name:',
+            type: 'input',
+            name: 'last_name'
+        }, {
+            type: "rawlist",
+            name: "department",
+            message: "Employee Department",
+            choices: choices
+        }
+    ])
+    .then(function (answers) {
+        console.log(`Adding new employee ${answers.first_name} ${answers.last_name}`);
+        addEmployee(answers);
+    })
+};
+
+// function readItems() {
+
+// connection.query("SELECT * FROM items", function(err, res) {
+//     if (err) throw err;
+//     return res;
+// })
+// }
+
+function readTables(table) {
+    connection.query("SELECT * FROM table", function(err, results) {
+        if (err) throw err;
+        cb(results);
+    })
+}
+
+function readDeptTable(table) {
+    connection.query("SELECT * FROM departments", function(err, results) {
+        if (err) throw err;
+        return results;
+    })
+}
+
+
+
+
+// ======================================================================
+
 
 //ARRAY OF QUESTIONS TO ASK ABOUT EACH ROLE
 var roleQuestions = [
@@ -171,7 +240,7 @@ function addDepartment(response) {
                 department_name: response.department_name,
             },
                 function (err, res) {
-                console.log(res.affectedRows + " department added to MySql!\n");
+                console.log(response.department_name + " department added to Departments table!\n");
                 addMore();
             }
         );
@@ -251,10 +320,11 @@ function printDepartments() {
 //     var results = readTables();
 // }
 
+//====================================================================================
 
 //PRINT MENU AND PRINT DATA FUNCTIONS
 
-//Print Menu - Prompt user to select which table to view - employees, roles, departments, or all. Use switch-case.
+//Print Menu - Prompt user to select   which table to view - employees, roles, departments, or all. Use switch-case.
 //After printing, return to initial what would you like to do prompt.
 
 async function printMenu() {
@@ -287,16 +357,14 @@ async function printMenu() {
         }
 
         console.log('Print Menu is running a function...');
-            connection.end();
 };
-
 
 // =================================================
 
-function readTables(table) {
-    connection.query("SELECT * FROM table", function(err, results) {
+function readDeptTable() {
+    connection.query("SELECT * FROM departments", function(err, results) {
         if (err) throw err;
-        cb(results);
+        return results;
     })
 }
 
@@ -312,12 +380,24 @@ function readManagerRelations () {
         })
 }
 
-
 //if All is selected, print data in all tables
 var all = function printOverview () {
     connection.query("SELECT * FROM employees GROUP BY departments", function(err, results) {
         console.table(results);
     });
+}
+
+async function quit() {
+    const {quit_confirm} = await inquirer.prompt({
+        message: 'Are you sure you want to quit and end the connection to the Dunder Mifflin head office?',
+        type: 'confirm',
+        name: 'quit_confirm'
+    })
+    if ({quit_confirm} === false) {
+        addMore();
+    } else connection.end();
+        console.log('Goodbye!')
+        process.exit();
 }
 
 //==============================================================
