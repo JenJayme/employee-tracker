@@ -34,7 +34,7 @@ var chooseActionPrompt = {
         'Enter Department',
         'Enter Role',
         'Enter Employee',
-        'Add Manager', //function not yet built out
+        'Add Manager', 
         'View Lists',
         'Update Employee Info',
         'Quit'
@@ -132,47 +132,32 @@ function getEmployeeData() {
 //FUNCTION TO ADD USER RESPONSES TO DB
 function addEmployee(answers) {
     console.log("Adding a new employee...\n");
-    var query = connection.query(
-        "INSERT INTO employees SET ?",
+    var query = "INSERT INTO employees SET ?";
+    connection.query(query,
         {
             first_name: answers.first_name,
             last_name: answers.last_name,
             department_name: answers.department_name,
+            title: answers.title,
+            manager_name: answers.employee,
         },
         function (err, res) {
             if (err) throw err;
-            console.log(answers.first_name + " " + answers.last_name + " employee added to Dunder Mifflin employees database!\n");
-            addMore();
-        }
-    );
-    // logs the query being run
-    console.log(query.sql);
+            console.log(answers.first_name + " " + answers.last_name + "  added to Dunder Mifflin employees database!\n");
+        });
+
+    // connection.query('UPDATE employees.department_id = departments.department_id WHERE employees.department_id IS NOT NULL');
 };
 
-//ARRAY OF QUESTIONS TO ASK ABOUT EACH EMPLOYEE
-var employeeQuestions = [
-    {
-        message: 'Employee First Name:',
-        type: 'input',
-        name: 'first_name'
-    }, {
-        message: 'Last name:',
-        type: 'input',
-        name: 'last_name'
-    }, {
-        message: 'Department: ',
-        type: 'rawlist',
-        name: 'department',
-        choices: deptFallbackArray
-    }
-];
-
 // ======================================================================
-// ATTEMPT TO RECONSTRUCT GET EMPLOYEE DATA
+// RECONSTRUCTED GETEMPLOYEEDATA TO PULL LIST OF DEPTS FROM TABLE
 
 function getEmployeeData2() {
-    var departments = [];
-    connection.query("SELECT * FROM departments",
+    var departments = ['Not listed'];
+    var roles = ['Not listed'];
+    var employees = ['Not listed'];
+
+    connection.query('SELECT * FROM departments ORDER BY department_name',
         function (err, results) {
             if (err) throw err;
             for (var i = 0; i < results.length; i++) {
@@ -180,8 +165,25 @@ function getEmployeeData2() {
             }
             if (departments === []) {
                 console.log('No departments entered yet.')
-            } else console.log(departments);
-            return departments;
+            } else return departments;
+        }
+    );
+
+    connection.query("SELECT * FROM roles ORDER BY title",
+        function (err, results) {
+            if (err) throw err;
+            for (var i = 0; i < results.length; i++) {
+                roles.push(results[i].title);
+            }
+        }
+    );
+
+    connection.query('SELECT * FROM employees ORDER BY last_name',
+        function (err, results) {
+            if (err) throw err;
+            for (var i = 0; i < results.length; i++) {
+                employees.push(results[i].last_name + ',' + results[i].first_name)
+            }
         }
     );
 
@@ -197,8 +199,18 @@ function getEmployeeData2() {
         }, {
             type: "list",
             name: "department_name",
-            message: "Employee Department",
+            message: "Department",
             choices: departments
+        }, {
+            message: 'Job Title:',
+            type: 'list',
+            name: 'title',
+            choices: roles
+        }, {
+            message: "Employee's Manager",
+            type: 'list',
+            name: 'manager',
+            choices: employees,
         }
     ])
         .then(function (answers) {
@@ -295,7 +307,6 @@ function printEmployees() {
         function (err, results) {
             if (err) throw err;
             console.table(results);
-            addMore();
         })
 };
 
@@ -304,7 +315,6 @@ function printRoles() {
         function (err, results) {
             if (err) throw err;
             console.table(results);
-            addMore();
         })
 };
 
@@ -313,7 +323,6 @@ function printDepartments() {
         function (err, results) {
             if (err) throw err;
             console.table(results);
-            addMore();
         })
 };
 
@@ -348,42 +357,44 @@ function refreshEmployeesArr() {
     })
 }
 
-// function updateEmployee() {
-//     refreshEmployeesArr();
-//     inquirer.prompt([{
-//         message: 'What would you like to update?',
-//         type: 'list',
-//         name: 'itemToUpdate',
-//         choices: [
-//             'Name',
-//             'Title',
-//             'Department',
-//             'Salary',
-//             'Manager']
-//     }
-//     ]).then(function (response)) {
-//         switch (response.itemToUpdate) {
-//             case 'Name':
-//                 updateEmpName();
-//                 break;
+//==========================================================
 
-//             case 'Title':
-//                 updateEmpTitle();
-//                 break;
 
-//             case 'Department':
-//                 updateEmpDept();
-//                 break;
+var employeesArr;
+var employeeList;
+var employee;
 
-//             case 'Salary':
-//                 updateEmpSalary();
-//                 break;
+function refreshEmployeesArr() {
+    inquirer.prompt([{
+        message: 'Please confirm to proceed with updating the database.',
+        type: 'confirm',
+        name: 'refreshList'
+    }])
 
-//             case 'Manager':
-//                 updateEmpManager();
-//                 break;
-//         }
-//     }
+        .then(function (response) {
+            if (response.refreshList === true) {
+
+                connection.query("SELECT * FROM employees",
+                    function (err, results) {
+                        if (err) throw err;
+                        for (var i = 0; i < results.length; i++) {
+                            // employee = results[i];
+                            employee.name = (results[i].last_name + " " + results[i].first_name);
+                            // employeesArr.push(employee);
+                            employeeList.push(employee.name);
+                        }
+                        console.table(employeeList);
+                        updateEmployee();
+                    })
+
+
+            } else console.log(employeeList);
+            addMore();
+        })
+}
+
+
+//==========================================================
 
 var updateQuestions = [
     {
@@ -396,7 +407,8 @@ var updateQuestions = [
         type: 'list',
         name: 'fieldToUpdate',
         choices: [
-            'Name',
+            'First_Name',
+            'Last_Name',
             'Title',
             'Department',
             'Salary',
@@ -409,27 +421,30 @@ var updateQuestions = [
 ]
 
 async function updateEmployee() {
+    connection.query(SELECT * FROM employees)
+
     await inquirer.prompt(updateQuestions).then(function (response) {
         console.log(`Ready to update the ${response.fieldToUpdate} field for ${response.empToUpdate} with this new info: ${response.newInfo}`);
 
-        var field = response.fieldToUpdate;
+        var field = response.fieldToUpdate.toLowerCase();
         var newInfo = response.newInfo;
         var chosenEmp = response.last_name;
-        var query = connection.query("UPDATE employees SET ? WHERE ??",
+        var query = connection.query("UPDATE employees SET ? WHERE ?",
             [
                 {
-                    field: newInfo
+                    field: newInfo,
                 },
                 {
                     last_name: chosenEmp
                 }
             ],
-        function (err, res) {
-            if (err) throw err;
+            function (err, res) {
+                if (err) throw err;
                 console.log('Update successful!');
                 // updateIds();
             }
-        )}
+        )
+    }
     )
 }
 
@@ -454,132 +469,132 @@ async function updateEmployee() {
 //     if (err) throw err;
 
 
-// UPDATE Customers
-// SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'
-// WHERE CustomerID = 1;
+    // UPDATE Customers
+    // SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'
+    // WHERE CustomerID = 1;
 
-//USE FOR UPDATING EMPLOYEE RECORD WITH MANAGER ID
-// function updateProduct() {
-//     console.log("Updating all Rocky Road quantities...\n");
-//     var query = connection.query(
-//       "UPDATE products SET ? WHERE ?",
-//       [
-//         {
-//           quantity: 100
-//         },
-//         {
-//           flavor: "Rocky Road"
-//         }
-//       ],
-//       function(err, res) {
-//         console.log(res.affectedRows + " products updated!\n");
-//         // Call deleteProduct AFTER the UPDATE completes
-//         deleteProduct();
-//       }
+    //USE FOR UPDATING EMPLOYEE RECORD WITH MANAGER ID
+    // function updateProduct() {
+    //     console.log("Updating all Rocky Road quantities...\n");
+    //     var query = connection.query(
+    //       "UPDATE products SET ? WHERE ?",
+    //       [
+    //         {
+    //           quantity: 100
+    //         },
+    //         {
+    //           flavor: "Rocky Road"
+    //         }
+    //       ],
+    //       function(err, res) {
+    //         console.log(res.affectedRows + " products updated!\n");
+    //         // Call deleteProduct AFTER the UPDATE completes
+    //         deleteProduct();
+    //       }
 
-//====================================================================================
+    //====================================================================================
 
-//ADD MANAGER FUNCTION - first set up prompt to provide a list of all employees to choose from. Set this choice as person A.
+    //ADD MANAGER FUNCTION - first set up prompt to provide a list of all employees to choose from. Set this choice as person A.
 
-// set up a second prompt to show a list of all employees to choose from.  Set this choice as person B.
+    // set up a second prompt to show a list of all employees to choose from.  Set this choice as person B.
 
-// set up a switch function to determine whether to Add Manager or Add Direct Report. This will determine where the ids get returned.
-//If Add Manager, person B's ID gets added to person A's record. If Add Direct Report, person A's ID gets added to person B's record.
+    // set up a switch function to determine whether to Add Manager or Add Direct Report. This will determine where the ids get returned.
+    //If Add Manager, person B's ID gets added to person A's record. If Add Direct Report, person A's ID gets added to person B's record.
 
-//Console log results and create a confirm prompt to continue with the action.
+    //Console log results and create a confirm prompt to continue with the action.
 
-//Refer to update function from icecreamcrud
-// function addManager() {
+    //Refer to update function from icecreamcrud
+    // function addManager() {
 
-// }
+    // }
 
-//create a list of employees from which to choose
-// function selectEmployee () {
-//     var results = readTables();
-// }
+    //create a list of employees from which to choose
+    // function selectEmployee () {
+    //     var results = readTables();
+    // }
 
-//====================================================================================
+    //====================================================================================
 
-//PRINT MENU AND PRINT DATA FUNCTIONS
+    //PRINT MENU AND PRINT DATA FUNCTIONS
 
-//Print Menu - Prompt user to select   which table to view - employees, roles, departments, or all. Use switch-case.
-//After printing, return to initial what would you like to do prompt.
+    //Print Menu - Prompt user to select   which table to view - employees, roles, departments, or all. Use switch-case.
+    //After printing, return to initial what would you like to do prompt.
 
-async function printMenu() {
-    await inquirer.prompt({
-        message: 'Which list would you like to view?',
-        type: 'list',
-        name: 'listChoice',
-        choices: [
-            'Employees',
-            'Departments',
-            'Roles',
-            // 'Managers',
-        ]
-    })
-        .then(function (response) {
-            console.log(response);
-
-            switch (response.listChoice) {
-                case 'Employees':
-                    printEmployees();
-                    break;
-
-                case 'Departments':
-                    printDepartments();
-                    break;
-
-                case 'Roles':
-                    printRoles();
-                    break;
-
-                default: printDepartments();
-            }
-            console.log(`Here's the latest list of ${response.listChoice}!`);
-        });
-
-}
-
-// =================================================
-
-function readDeptTable() {
-    connection.query("SELECT * FROM departments", function (err, results) {
-        if (err) throw err;
-        return results;
-    })
-}
-
-//if Managers is selected from the print menu, print a table with an array of objects with key value pairs Supervisor, Direct Reports
-function readManagerRelations() {
-    var allManagersArr = [];
-    connection.query("SELECT * FROM employees WHERE manager_id IS NOT NULL",
-        function (err, results) {
-            if (err) throw err;
-            allManagersArr = results;
-            console.log(allManagersArr);
-            return allManagersArr;
+    async function printMenu() {
+        await inquirer.prompt({
+            message: 'Which list would you like to view?',
+            type: 'list',
+            name: 'listChoice',
+            choices: [
+                'Employees',
+                'Departments',
+                'Roles',
+                // 'Managers',
+            ]
         })
-}
+            .then(function (response) {
+                console.log(response);
 
-//if All is selected, print data in all tables
-var all = function printOverview() {
-    connection.query("SELECT * FROM employees GROUP BY departments", function (err, results) {
-        console.table(results);
-    });
-}
+                switch (response.listChoice) {
+                    case 'Employees':
+                        printEmployees();
+                        break;
 
-async function quit() {
-    const { quit_confirm } = await inquirer.prompt({
-        message: 'Are you sure you want to quit and end the connection to the Dunder Mifflin head office?',
-        type: 'confirm',
-        name: 'quit_confirm'
-    })
-    if ({ quit_confirm } === false) {
-        addMore();
-    } else connection.end();
-    console.log('Goodbye!')
-    process.exit();
-}
+                    case 'Departments':
+                        printDepartments();
+                        break;
+
+                    case 'Roles':
+                        printRoles();
+                        break;
+
+                    default: printDepartments();
+                }
+                console.log(`Here's the latest list of ${response.listChoice}!`);
+            });
+
+    }
+
+    // =================================================
+
+    function readDeptTable() {
+        connection.query("SELECT * FROM departments", function (err, results) {
+            if (err) throw err;
+            return results;
+        })
+    }
+
+    //if Managers is selected from the print menu, print a table with an array of objects with key value pairs Supervisor, Direct Reports
+    function readManagerRelations() {
+        var allManagersArr = [];
+        connection.query("SELECT * FROM employees WHERE manager_id IS NOT NULL",
+            function (err, results) {
+                if (err) throw err;
+                allManagersArr = results;
+                console.log(allManagersArr);
+                return allManagersArr;
+            })
+    }
+
+    //if All is selected, print data in all tables
+    var all = function printOverview() {
+        connection.query("SELECT * FROM employees GROUP BY departments", function (err, results) {
+            console.table(results);
+        });
+    }
+
+    async function quit() {
+        const { quit_confirm } = await inquirer.prompt({
+            message: 'Are you sure you want to quit and end the connection to the Dunder Mifflin head office?',
+            type: 'confirm',
+            name: 'quit_confirm'
+        })
+        if ({ quit_confirm } === false) {
+            addMore();
+        } else connection.end();
+        console.log('Goodbye!')
+        process.exit();
+    }
 
 //=======================================================
 
