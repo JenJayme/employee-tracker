@@ -46,7 +46,7 @@ async function chooseActionFct() {
     await inquirer.prompt(chooseActionPrompt).then(function (response) {
         switch (response.action) {
             case 'Enter Employee':
-                getEmployeeData(); //need to add department & role
+                getEmployeeData2(); //need to add department & role
                 break;
 
             case 'Enter Role':
@@ -171,10 +171,10 @@ var employeeQuestions = [
 // ATTEMPT TO RECONSTRUCT GET EMPLOYEE DATA
 
 function getEmployeeData2() {
+    var departments = [];
     connection.query("SELECT * FROM departments",
         function (err, results) {
             if (err) throw err;
-            var departments = [];
             for (var i = 0; i < results.length; i++) {
                 departments.push(results[i].department_name)
             }
@@ -182,27 +182,29 @@ function getEmployeeData2() {
                 console.log('No departments entered yet.')
             } else console.log(departments);
             return departments;
-        }),
-        inquirer.prompt([
-            {
-                message: 'Employee First Name:',
-                type: 'input',
-                name: 'first_name'
-            }, {
-                message: 'Last name:',
-                type: 'input',
-                name: 'last_name'
-            }, {
-                type: "list",
-                name: "department_name",
-                message: "Employee Department",
-                choices: deptFallbackArray
-            }
-        ])
-            .then(function (answers) {
-                console.log(`Adding new employee ${answers.first_name} ${answers.last_name}`);
-                addEmployee(answers);
-            });
+        }
+    );
+
+    inquirer.prompt([
+        {
+            message: 'Employee First Name:',
+            type: 'input',
+            name: 'first_name'
+        }, {
+            message: 'Last name:',
+            type: 'input',
+            name: 'last_name'
+        }, {
+            type: "list",
+            name: "department_name",
+            message: "Employee Department",
+            choices: departments
+        }
+    ])
+        .then(function (answers) {
+            console.log(`Adding new employee ${answers.first_name} ${answers.last_name}`);
+            addEmployee(answers);
+        });
 }
 
 function readTables(table) {
@@ -413,7 +415,7 @@ async function updateEmployee() {
         var field = response.fieldToUpdate;
         var newInfo = response.newInfo;
         var chosenEmp = response.last_name;
-        var query = connection.query("UPDATE employees SET ? WHERE ?",
+        var query = connection.query("UPDATE employees SET ? WHERE ??",
             [
                 {
                     field: newInfo
@@ -423,29 +425,30 @@ async function updateEmployee() {
                 }
             ],
         function (err, res) {
+            if (err) throw err;
                 console.log('Update successful!');
-                updateIds();
+                // updateIds();
             }
         )}
     )
 }
 
-function updateIds () {
-    var query = connection.query(UPDATE employees department_id = 1 WHERE department_name = 'Scranton Branch',
-    [
-        {
-            department_id: '1'
-        },
-        {
-            department_name: 'Scranton Branch'
-        }
-    ],
-    function (err, res) {
-        console.log('Department IDs updated!');
-        addMore();
-    }
-    )
-}
+// function updateIds () {
+//     var query = connection.query(UPDATE employees department_id = 1 WHERE department_name = 'Scranton Branch',
+//     [
+//         {
+//             department_id: '1'
+//         },
+//         {
+//             department_name: 'Scranton Branch'
+//         }
+//     ],
+//     function (err, res) {
+//         console.log('Department IDs updated!');
+//         addMore();
+//     }
+//     )
+// }
 
 // function (err, results) {
 //     if (err) throw err;
